@@ -11,8 +11,11 @@ use crate::{
     queue::LoopMode,
 };
 
+pub mod pause;
 pub mod play;
+pub mod resume;
 pub mod skip;
+pub mod stop;
 
 #[instrument(skip(data, manager))]
 pub async fn play_next(

@@ -1,3 +1,5 @@
+use serenity::all::ActivityData;
+
 use crate::{
     audio::{QueuedTrack, source::AudioSource, ytdlp::YtDlpSource},
     client::Context,

@@ -19,10 +19,16 @@ macro_rules! cmd {
 
 pub fn all() -> Vec<Command> {
     vec![
+        // general
         cmd!(general, pfp),
         cmd!(general, age),
+        // music
         cmd!(music, skip),
         cmd!(music, play),
+        cmd!(music, pause),
+        cmd!(music, resume),
+        cmd!(music, stop),
+        // voice
         cmd!(voice, join),
         cmd!(voice, leave),
     ]
