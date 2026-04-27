@@ -43,7 +43,6 @@ async fn setup(ctx: &serenity::Context) -> Result<BotData, BotError> {
 pub async fn handle_shutdown(shard_manager: Arc<serenity::ShardManager>, reason: &str) {
     tracing::warn!("{reason}! Shutting down bot...");
     shard_manager.shutdown_all().await;
-    println!("Everything is shutdown. GoodBye!")
 }
 
 pub async fn get() -> Result<serenity::Client, BotError> {

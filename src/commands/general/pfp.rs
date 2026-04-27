@@ -1,4 +1,4 @@
-use crate::{client::Context, consts::Colors, error::BotError};
+use crate::{client::Context, error::BotError};
 use poise::{
     CreateReply,
     serenity_prelude::{CreateEmbed, User},
@@ -10,11 +10,7 @@ pub async fn pfp(ctx: Context<'_>, user: User) -> Result<(), BotError> {
     let url = user
         .avatar_url()
         .unwrap_or_else(|| user.default_avatar_url());
-    let embed = CreateEmbed::new()
-        .title(user.name)
-        .color(Colors::Blue)
-        .url(&url)
-        .image(&url);
+    let embed = CreateEmbed::new().title(user.name).url(&url).image(&url);
     let reply = CreateReply::default().embed(embed);
     ctx.send(reply).await?;
 

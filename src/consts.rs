@@ -1,6 +1,5 @@
+use poise::serenity_prelude::{Permissions, Scope};
 use std::sync::OnceLock;
-
-use poise::serenity_prelude::{Colour, Permissions, Scope};
 
 pub fn bot_permissions() -> &'static Permissions {
     static BOT_PERMISSIONS: OnceLock<Permissions> = OnceLock::new();
@@ -28,28 +27,4 @@ pub fn bot_permissions() -> &'static Permissions {
 pub fn bot_scopes() -> &'static Vec<Scope> {
     static BOT_SCOPES: OnceLock<Vec<Scope>> = OnceLock::new();
     BOT_SCOPES.get_or_init(|| vec![Scope::Bot, Scope::ApplicationsCommands])
-}
-
-pub const RESPONSES: [&str; 5] = [
-    "soon",
-    "maybe",
-    "perhaps",
-    "elaborate",
-    "Twitter's Recommendation Algorithm",
-];
-
-pub enum Colors {
-    Blue,
-    Orange,
-    Red,
-}
-
-impl From<Colors> for Colour {
-    fn from(val: Colors) -> Self {
-        match val {
-            Colors::Blue => Colour::from(0x88C7FD),
-            Colors::Orange => Colour::from(0xFFB34A),
-            Colors::Red => Colour::from(0xFF5E4A),
-        }
-    }
 }

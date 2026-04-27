@@ -1,8 +1,4 @@
-use crate::{client::BotData, consts::Colors, error::BotError};
-use poise::{
-    CreateReply,
-    serenity_prelude::{CreateEmbed, Timestamp},
-};
+use crate::{client::BotData, error::BotError};
 
 pub async fn handle(error: poise::FrameworkError<'_, BotData, BotError>) {
     match error {
@@ -16,16 +12,15 @@ pub async fn handle(error: poise::FrameworkError<'_, BotData, BotError>) {
         }
         poise::FrameworkError::Command { error, ctx, .. } => {
             tracing::error!("Error in command {}:\n{error}", ctx.command().name);
+            let msg = if error.is_user_facing() {
+                error.to_string()
+            } else {
+                "Something went wrong. Please try again".into()
+            };
 
-            let embed = CreateEmbed::default()
-                .title("Something went wrong!")
-                .description(format!("Oopsie... {}", error))
-                .timestamp(Timestamp::now())
-                .color(Colors::Orange);
-
-            let reply = CreateReply::default().embed(embed);
-
-            ctx.send(reply).await.ok();
+            ctx.send(poise::CreateReply::default().content(msg).ephemeral(true))
+                .await
+                .ok();
         }
         poise::FrameworkError::EventHandler {
             error,
