@@ -17,7 +17,7 @@ impl YtDlpSource {
             .await
             .map_err(|e| BotError::YtDlpError(format!("Failed to spawn yt-dlp: {e}")))?;
 
-        if !output.status.success() {
+        if !output.status.success() && output.stdout.is_empty() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             tracing::error!("yt-dlp failed: {}", stderr);
             return Err(BotError::YtDlpError(format!(
@@ -49,23 +49,45 @@ impl AudioSource for YtDlpSource {
     }
 
     #[instrument(skip(self), fields(source = "yt-dlp"))]
-    async fn resolve_metadata(&self, query: &str) -> Result<super::TrackMetadata, BotError> {
-        let stdout = Self::run_ytdlp(&[
-            "--print",
-            "title",
-            "--print",
-            "duration_string",
-            "--print",
-            "webpage_url",
-            "--no-download",
-            "--no-playlist",
-            &Self::format_query(query),
-        ])
-        .await?;
+    async fn resolve_metadata(&self, query: &str) -> Result<Vec<super::TrackMetadata>, BotError> {
+        if !self.can_handle(query) {
+            return Err(BotError::Internal("Unsupported query".into()));
+        }
 
-        parse_ytdlp_output(&stdout).ok_or_else(|| {
-            BotError::YtDlpError(format!("Failed to parse yt-dlp output for: {query}"))
-        })
+        if query.contains("&list=") || query.contains("/playlist") {
+            let stdout = Self::run_ytdlp(&[
+                "--flat-playlist",
+                "--no-download",
+                "--extractor-args",
+                "youtube:skip=none",
+                "-J",
+                &Self::format_query(query),
+            ])
+            .await?;
+
+            let tracks = parse_ytdlp_playlist_output(&stdout)?;
+
+            return Ok(tracks);
+        } else {
+            let stdout = Self::run_ytdlp(&[
+                "--print",
+                "title",
+                "--print",
+                "duration_string",
+                "--print",
+                "webpage_url",
+                "--no-download",
+                "--no-playlist",
+                &Self::format_query(query),
+            ])
+            .await?;
+
+            let result = parse_ytdlp_output(&stdout).ok_or_else(|| {
+                BotError::YtDlpError(format!("Failed to parse yt-dlp output for: {query}"))
+            })?;
+
+            return Ok(vec![result]);
+        }
     }
 
     async fn create_input(
@@ -85,23 +107,7 @@ impl AudioSource for YtDlpSource {
 
     #[instrument(skip(self), fields(source = "yt-dlp"))]
     async fn search(&self, query: &str, limit: usize) -> Result<Vec<TrackMetadata>, BotError> {
-        let search_query = format!("ytsearch{limit}:{query}");
-        let stdout = Self::run_ytdlp(&[
-            "--print",
-            "title",
-            "--print",
-            "webpage_url",
-            "--no-download",
-            "--no-playlist",
-            &search_query,
-        ])
-        .await?;
-
-        let results = parse_ytdlp_search_output(&stdout);
-        if results.is_empty() {
-            return Err(BotError::NoSearchResults(query.to_string()));
-        }
-        Ok(results)
+        unimplemented!();
     }
 }
 
@@ -135,32 +141,26 @@ pub fn parse_ytdlp_output(stdout: &str) -> Option<TrackMetadata> {
     })
 }
 
-pub fn parse_ytdlp_search_output(stdout: &str) -> Vec<TrackMetadata> {
-    let lines: Vec<&str> = stdout.lines().collect();
-    let mut results = Vec::new();
+pub fn parse_ytdlp_playlist_output(stdout: &str) -> Result<Vec<TrackMetadata>, BotError> {
+    let data = serde_json::from_str::<super::YtPlaylist>(stdout)
+        .map_err(|e| BotError::Internal(e.to_string()))?;
 
-    for chunk in lines.chunks(2) {
-        if chunk.len() < 2 {
-            break;
-        }
-        let title = chunk[0].trim().to_string();
-        let url = chunk[1].trim().to_string();
+    let mut tracks = Vec::with_capacity(data.entries.len());
+    for entry in data.entries {
+        let duration_secs = entry.duration as u64;
+        let duration = format!("{}:{:02}", duration_secs / 60, duration_secs % 60);
 
-        if title.is_empty() || url.is_empty() {
-            continue;
-        }
-
-        results.push(TrackMetadata {
-            title,
-            duration: None,
-            duration_secs: None,
-            url,
-            thumbnail_url: None,
+        tracks.push(TrackMetadata {
+            title: entry.title,
+            url: entry.url,
+            duration_secs: Some(duration_secs),
+            duration: Some(duration),
             source_type: SourceType::YouTube,
+            thumbnail_url: None,
         });
     }
 
-    results
+    Ok(tracks)
 }
 
 fn parse_duration_string(s: &str) -> Option<u64> {
@@ -222,22 +222,6 @@ mod tests {
     fn parse_empty_title() {
         let output = "\n3:33\nhttps://youtube.com/watch?v=test\n";
         assert!(parse_ytdlp_output(output).is_none());
-    }
-
-    #[test]
-    fn parse_search_results() {
-        let output =
-            "Track One\nhttps://youtube.com/watch?v=1\nTrack Two\nhttps://youtube.com/watch?v=2\n";
-        let results = parse_ytdlp_search_output(output);
-        assert_eq!(results.len(), 2);
-        assert_eq!(results[0].title, "Track One");
-        assert_eq!(results[1].title, "Track Two");
-    }
-
-    #[test]
-    fn parse_search_empty() {
-        let results = parse_ytdlp_search_output("");
-        assert!(results.is_empty());
     }
 
     #[test]

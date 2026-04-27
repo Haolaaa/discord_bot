@@ -1,5 +1,6 @@
 use crate::{client::Context, error::BotError};
 
+/// Pause the current track
 #[poise::command(slash_command, guild_only)]
 pub async fn pause(ctx: Context<'_>) -> Result<(), BotError> {
     let guild_id = ctx

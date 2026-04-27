@@ -1,5 +1,3 @@
-use serenity::all::ActivityData;
-
 use crate::{
     audio::{QueuedTrack, source::AudioSource, ytdlp::YtDlpSource},
     client::Context,
@@ -7,6 +5,7 @@ use crate::{
     error::BotError,
 };
 
+/// Play a song from YouTube (URL or search query)
 #[poise::command(slash_command, prefix_command)]
 pub async fn play(
     ctx: Context<'_>,
@@ -31,14 +30,27 @@ pub async fn play(
     ctx.defer().await?;
 
     let source = YtDlpSource;
-    let metadata = source.resolve_metadata(&query).await?;
+    let queued_tracks = source
+        .resolve_metadata(&query)
+        .await?
+        .into_iter()
+        .map(|m| QueuedTrack::new(m, ctx.author().id))
+        .collect::<Vec<_>>();
 
-    let queued_track = QueuedTrack::new(metadata.clone(), query, ctx.author().id);
+    if queued_tracks.is_empty() {
+        return Err(BotError::NoSearchResults(query));
+    }
 
+    let first_track = queued_tracks.first().cloned().unwrap();
+    
     let should_play = {
         let mut state = ctx.data().guild_states.entry(guild_id).or_default();
         let is_idle = state.current_track.is_none();
-        state.queue.enqueue(queued_track);
+
+        for track in queued_tracks {
+            state.queue.enqueue(track);
+        }
+
         state.text_channel_id = ctx.channel_id();
         is_idle
     };
@@ -56,8 +68,8 @@ pub async fn play(
         ctx.say(format!(
             "Queued at #{}: **{}** [{}]",
             queue_len,
-            metadata.title,
-            metadata.duration.as_deref().unwrap_or("?:??")
+            first_track.metadata.title,
+            first_track.metadata.duration.as_deref().unwrap_or("?:??")
         ))
         .await?;
     }

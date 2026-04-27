@@ -1,5 +1,6 @@
 use crate::{client::Context, error::BotError};
 
+/// Resume the current track
 #[poise::command(slash_command, guild_only)]
 pub async fn resume(ctx: Context<'_>) -> Result<(), BotError> {
     let guild_id = ctx

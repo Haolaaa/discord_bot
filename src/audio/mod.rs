@@ -1,8 +1,21 @@
 use poise::serenity_prelude;
+use serde::Deserialize;
 use uuid::Uuid;
 
 pub mod source;
 pub mod ytdlp;
+
+#[derive(Debug, Deserialize)]
+pub struct YtPlaylist {
+    entries: Vec<YtEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct YtEntry {
+    pub title: String,
+    pub url: String,
+    pub duration: f32,
+}
 
 #[derive(Debug, Clone)]
 pub struct TrackMetadata {
@@ -24,20 +37,14 @@ pub enum SourceType {
 pub struct QueuedTrack {
     pub id: Uuid,
     pub metadata: TrackMetadata,
-    pub query: String,
     pub requested_by: serenity_prelude::UserId,
 }
 
 impl QueuedTrack {
-    pub fn new(
-        metadata: TrackMetadata,
-        query: String,
-        requested_by: serenity_prelude::UserId,
-    ) -> Self {
+    pub fn new(metadata: TrackMetadata, requested_by: serenity_prelude::UserId) -> Self {
         Self {
             id: Uuid::new_v4(),
             metadata,
-            query,
             requested_by,
         }
     }
@@ -61,8 +68,8 @@ mod tests {
     #[test]
     fn queued_track_has_unique_id() {
         let user_id = serenity_prelude::UserId::new(1);
-        let t1 = QueuedTrack::new(sample_metadata(), "query".into(), user_id);
-        let t2 = QueuedTrack::new(sample_metadata(), "query".into(), user_id);
+        let t1 = QueuedTrack::new(sample_metadata(), user_id);
+        let t2 = QueuedTrack::new(sample_metadata(), user_id);
         assert_ne!(t1.id, t2.id);
     }
 

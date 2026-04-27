@@ -1,5 +1,6 @@
 use crate::{client::Context, error::BotError};
 
+/// Stop playback, clear queue, and leave voice
 #[poise::command(slash_command, guild_only)]
 pub async fn stop(ctx: Context<'_>) -> Result<(), BotError> {
     let guild_id = ctx

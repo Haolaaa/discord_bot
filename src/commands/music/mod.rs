@@ -1,8 +1,3 @@
-use poise::serenity_prelude;
-use songbird::{Event, EventContext, EventHandler as VoiceEventHandler, TrackEvent};
-use std::{sync::Arc, time::Instant};
-use tracing::instrument;
-
 use crate::{
     audio::{QueuedTrack, source::AudioSource, ytdlp::YtDlpSource},
     client::BotData,
@@ -10,12 +5,18 @@ use crate::{
     guild_state::CurrentTrack,
     queue::LoopMode,
 };
+use poise::serenity_prelude;
+use songbird::{Event, EventContext, EventHandler as VoiceEventHandler, TrackEvent};
+use std::{sync::Arc, time::Instant};
+use tracing::instrument;
 
+pub mod info;
+pub mod loop_cmd;
 pub mod pause;
 pub mod play;
 pub mod resume;
-pub mod skip;
 pub mod stop;
+pub mod volume;
 
 #[instrument(skip(data, manager))]
 pub async fn play_next(
@@ -130,21 +131,15 @@ impl VoiceEventHandler for TrackEndHandler {
                 match state.queue.loop_mode {
                     LoopMode::Single => {
                         if state.current_track.is_some() {
-                            let re_track = QueuedTrack::new(
-                                meta.clone(),
-                                meta.url.clone(),
-                                serenity_prelude::UserId::new(1),
-                            );
+                            let re_track =
+                                QueuedTrack::new(meta.clone(), serenity_prelude::UserId::new(1));
                             state.queue.enqueue_front(re_track);
                         }
                     }
                     LoopMode::Queue => {
                         if state.current_track.is_some() {
-                            let re_track = QueuedTrack::new(
-                                meta.clone(),
-                                meta.url.clone(),
-                                serenity_prelude::UserId::new(1),
-                            );
+                            let re_track =
+                                QueuedTrack::new(meta.clone(), serenity_prelude::UserId::new(1));
                             state.queue.enqueue(re_track);
                         }
                     }
