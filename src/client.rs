@@ -2,12 +2,14 @@ use crate::{commands, error::BotError, events, guild_state::GuildPlayer};
 use dashmap::DashMap;
 use poise::{
     EditTracker, Framework, FrameworkOptions, PrefixFrameworkOptions,
-    serenity_prelude::{self as serenity, prelude::TypeMapKey},
+    serenity_prelude::{self as serenity},
 };
 use reqwest::Client as HttpClient;
-use songbird::SerenityInit;
-use std::{collections::HashMap, sync::Arc, time::Duration};
-use tokio::sync::Mutex;
+use songbird::{
+    SerenityInit,
+    driver::{DecodeConfig, DecodeMode},
+};
+use std::{sync::Arc, time::Duration};
 
 pub type Context<'a> = poise::Context<'a, BotData, BotError>;
 
@@ -67,6 +69,9 @@ pub async fn get() -> Result<serenity::Client, BotError> {
         ..Default::default()
     };
 
+    let songbird_config =
+        songbird::Config::default().decode_mode(DecodeMode::Decode(DecodeConfig::default()));
+
     let framework = Framework::builder()
         .options(options)
         .setup(|ctx, _ready, _framework| Box::pin(setup(ctx)))
@@ -74,7 +79,7 @@ pub async fn get() -> Result<serenity::Client, BotError> {
 
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
-        .register_songbird()
+        .register_songbird_from_config(songbird_config)
         .await?;
 
     Ok(client)

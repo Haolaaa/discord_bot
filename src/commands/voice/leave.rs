@@ -1,6 +1,7 @@
 use crate::{client::Context, error::BotError};
 use tracing::instrument;
 
+/// Leave the voice channel
 #[poise::command(slash_command, guild_only)]
 #[instrument(skip(ctx), fields(guild = ?ctx.guild_id()))]
 pub async fn leave(ctx: Context<'_>) -> Result<(), BotError> {

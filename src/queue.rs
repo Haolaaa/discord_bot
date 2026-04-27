@@ -98,7 +98,6 @@ mod tests {
                 thumbnail_url: None,
                 source_type: SourceType::YouTube,
             },
-            name.into(),
             serenity::UserId::new(1),
         )
     }

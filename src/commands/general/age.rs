@@ -1,6 +1,7 @@
 use crate::{client::Context, error::BotError};
 use poise::serenity_prelude::User;
 
+/// Age of your account
 #[poise::command(slash_command)]
 pub async fn age(
     ctx: Context<'_>,

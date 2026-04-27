@@ -4,6 +4,7 @@ use poise::{
     serenity_prelude::{CreateEmbed, User},
 };
 
+/// Your profile picture
 #[poise::command(context_menu_command = "Get profile picture", slash_command)]
 pub async fn pfp(ctx: Context<'_>, user: User) -> Result<(), BotError> {
     let url = user

@@ -19,7 +19,7 @@ pub async fn handle(error: poise::FrameworkError<'_, BotData, BotError>) {
 
             let embed = CreateEmbed::default()
                 .title("Something went wrong!")
-                .description("oopsie")
+                .description(format!("Oopsie... {}", error))
                 .timestamp(Timestamp::now())
                 .color(Colors::Orange);
 

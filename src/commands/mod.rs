@@ -1,5 +1,6 @@
 pub mod general;
 pub mod music;
+pub mod queue;
 pub mod voice;
 
 use crate::{client::BotData, error::BotError};
@@ -23,13 +24,21 @@ pub fn all() -> Vec<Command> {
         cmd!(general, pfp),
         cmd!(general, age),
         // music
-        cmd!(music, skip),
         cmd!(music, play),
         cmd!(music, pause),
         cmd!(music, resume),
         cmd!(music, stop),
+        cmd!(music, loop_cmd),
+        cmd!(music, volume),
+        cmd!(music, info, nowplaying),
         // voice
         cmd!(voice, join),
         cmd!(voice, leave),
+        // queue
+        cmd!(queue, queue),
+        cmd!(queue, skip),
+        cmd!(queue, remove),
+        cmd!(queue, clear),
+        cmd!(queue, shuffle),
     ]
 }
